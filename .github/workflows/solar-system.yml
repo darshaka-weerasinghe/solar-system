@@ -134,8 +134,8 @@ jobs:
           uses: docker/build-push-action@v5
           with:
             context: .
-            platforms: linux/amd64,linux/arm64
             push: false
+            load: true
             tags: ${{ vars.DOCKER_USERNAME }}/solar-system:${{ github.sha }}
 
         - name: Docker Image Test
