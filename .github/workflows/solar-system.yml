@@ -167,7 +167,7 @@ jobs:
     dev-deployment:
         needs: docker
         outputs:
-          APP_INGRESS_URL: ${{ steps.set-app-ingress-host-url.outputs.APP_INGRESS_HOST }}
+          APP_INGRESS_URL: ${{ steps.set-ingress-host-url.outputs.APP_INGRESS_HOST }}
         runs-on: ubuntu-latest
         steps:
         - name: Checkout Repository
@@ -230,6 +230,7 @@ jobs:
             kubectl apply -f kubernetes/development/ingress.yaml
 
         - name: Set App Ingress Host URL
+          id: set-ingress-host
           run: |
             echo "APP_INGRESS_HOST=$(kubectl -n ${{ vars.NAMESPACE }} get ing -o jsonpath='{.items[0].spec.rules[0].host}')" >> $GITHUB_ENV
             echo "APP_INGRESS_HOST: ${{ env.APP_INGRESS_HOST }}"
