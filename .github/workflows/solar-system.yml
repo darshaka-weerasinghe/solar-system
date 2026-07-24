@@ -25,7 +25,7 @@ jobs:
               MONGO_PASSWORD: non-prod-password
         strategy:
           matrix:
-            node-version: [18, 19, 20]
+            node-version: [19, 20]
             os: [ubuntu-latest]
 
         runs-on: ${{ matrix.os }}
@@ -165,6 +165,8 @@ jobs:
               ghcr.io/${{ github.repository_owner }}/solar-system:${{ github.sha }}
 
     dev-deployment:
+        if: contains(github.ref, 'refs/heads/feature/')
+        name: Development Deployment
         needs: docker
         environment:
           name: development
@@ -240,6 +242,7 @@ jobs:
             echo "APP_INGRESS_HOST: $APP_INGRESS_HOST"
 
     dev-integration-testing:
+          if: contains(github.ref, 'refs/heads/feature/')
           name: Integration Testing
           needs: dev-deployment
           runs-on: ubuntu-latest
@@ -253,7 +256,8 @@ jobs:
                 curl -s -k "http://$URL/live" | jq -r .status | grep -i live
 
     prod-deployment:
-        needs: dev-integration-testing
+        if: github.ref == 'refs/heads/main'
+        needs: docker
         environment:
           name: production
           url: http://${{ steps.set-ingress-host.outputs.APP_INGRESS_HOST }}
@@ -328,6 +332,7 @@ jobs:
             echo "APP_INGRESS_HOST: $APP_INGRESS_HOST"
 
     prod-integration-testing:
+          if: github.ref == 'refs/heads/main'
           name: Integration Testing
           needs: prod-deployment
           runs-on: ubuntu-latest
