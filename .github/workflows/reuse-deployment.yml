@@ -2,10 +2,26 @@ name: Reuse Deployment
 
 on:
   workflow_call:
-    outputs:
-      APP_INGRESS_URL:
-        description: "Ingress host of the deployed app"
-        value: ${{ jobs.reuse-deployment.outputs.APP_INGRESS_URL }}
+    inputs:
+        MONGO_URI:
+            description: 'MongoDB Connection URI'
+            required: true
+            type: string
+        KUBECTL-VERSION:
+            description: 'kubectl version to install'
+            required: false
+            type: string
+            default: 'v1.36.1'
+        K8S-MENIFEST-DIR:
+            description: 'Kubernetes manifest directory'
+            required: true
+            type: string
+            default: 'kubernetes/'
+        ENVIRONMENT:
+            description: 'Environment name for deployment'
+            required: true
+            type: string
+            default: 'development'
     secrets:
       KUBECONFIG:
         required: true
@@ -15,7 +31,7 @@ on:
 jobs:
     reuse-deployment:
         environment:
-          name: development
+          name: ${{ inputs.ENVIRONMENT }}
           url: http://${{ steps.set-ingress-host.outputs.APP_INGRESS_HOST }}
         outputs:
           APP_INGRESS_URL: ${{ steps.set-ingress-host.outputs.APP_INGRESS_HOST }}
@@ -27,7 +43,7 @@ jobs:
         - name: Install kubectl
           uses: azure/setup-kubectl@v3
           with:
-            version: 'v1.36.1'
+            version: ${{ inputs.KUBECTL-VERSION }}
 
         - name: Setup Kubeconfig
           uses: azure/k8s-set-context@v3
@@ -50,7 +66,7 @@ jobs:
           with:
             tokenPrefix: '_{_'
             tokenSuffix: '_}_'
-            files: '["kubernetes/development/*.yaml"]'
+            files: '["${{ inputs.K8S-MENIFEST-DIR }}/*.yaml"]'
           env:
             NAMESPACE: ${{ vars.NAMESPACE }}
             REPLICAS: ${{ vars.REPLICAS }}
@@ -59,16 +75,16 @@ jobs:
 
         - name: Check Deployment YAML
           run: |
-            cat kubernetes/development/deployment.yaml
+            cat ${{ inputs.K8S-MENIFEST-DIR }}/deployment.yaml
             echo "------------------------------"
-            cat kubernetes/development/service.yaml
+            cat ${{ inputs.K8S-MENIFEST-DIR }}/service.yaml
             echo "------------------------------"
-            cat kubernetes/development/ingress.yaml
+            cat ${{ inputs.K8S-MENIFEST-DIR }}/ingress.yaml
 
         - name: Create MongoDB Secret in Kubernetes
           run: |
             kubectl -n ${{ vars.NAMESPACE }} create secret generic mongo-db-creds \
-              --from-literal=MONGO_URI="${{ env.MONGO_URI }}" \
+              --from-literal=MONGO_URI="${{ inputs.MONGO_URI }}" \
               --from-literal=MONGO_USERNAME="${{ vars.MONGO_USERNAME }}" \
               --from-literal=MONGO_PASSWORD="${{ secrets.MONGO_PASSWORD }}" \
               --save-config \
@@ -76,9 +92,9 @@ jobs:
 
         - name: Deploy to Development Environment
           run: |
-            kubectl apply -f kubernetes/development/deployment.yaml
-            kubectl apply -f kubernetes/development/service.yaml
-            kubectl apply -f kubernetes/development/ingress.yaml
+            kubectl apply -f ${{ inputs.K8S-MENIFEST-DIR }}/deployment.yaml
+            kubectl apply -f ${{ inputs.K8S-MENIFEST-DIR }}/service.yaml
+            kubectl apply -f ${{ inputs.K8S-MENIFEST-DIR }}/ingress.yaml
 
         - name: Wait for Deployment to be Ready
           run: |
