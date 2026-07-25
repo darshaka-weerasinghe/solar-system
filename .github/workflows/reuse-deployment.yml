@@ -1,12 +1,16 @@
 name: Reuse Deployment
 
 on:
-    workflow_call:
-        secrets:
-            KUBECONFIG:
-                required: true
-            MONGO_PASSWORD:
-                required: true
+  workflow_call:
+    outputs:
+      APP_INGRESS_URL:
+        description: "Ingress host of the deployed app"
+        value: ${{ jobs.reuse-deployment.outputs.APP_INGRESS_URL }}
+    secrets:
+      KUBECONFIG:
+        required: true
+      MONGO_PASSWORD:
+        required: true
 
 jobs:
     reuse-deployment:
