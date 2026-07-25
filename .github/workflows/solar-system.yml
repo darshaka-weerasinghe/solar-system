@@ -168,6 +168,9 @@ jobs:
       if: contains(github.ref, 'refs/heads/feature/')
       needs: docker
       uses: ./.github/workflows/reuse-deployment.yml
+      secrets:
+        KUBECONFIG: ${{ secrets.KUBECONFIG }}
+        MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
 
     dev-integration-testing:
           if: contains(github.ref, 'refs/heads/feature/')
