@@ -22,6 +22,11 @@ on:
             required: true
             type: string
             default: 'development'
+    outputs:
+        APP_INGRESS_URL:
+            description: 'The URL of the deployed application ingress'
+            value: ${{ jobs.reuse-deployment.outputs.APP_INGRESS_URL }}
+
     secrets:
       KUBECONFIG:
         required: true
